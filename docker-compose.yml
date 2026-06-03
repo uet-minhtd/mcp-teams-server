@@ -1,0 +1,14 @@
+services:
+  mcp-teams:
+    build: .
+    container_name: mcp-teams-server
+    ports:
+      - "${TEAMS_MCP_PORT:-8888}:8888"
+    environment:
+      - AZURE_CLIENT_ID=${AZURE_CLIENT_ID}
+      - AZURE_CLIENT_SECRET=${AZURE_CLIENT_SECRET}
+      - AZURE_TENANT_ID=${AZURE_TENANT_ID}
+      - TEAMS_MCP_TRANSPORT=http
+      - TEAMS_MCP_PORT=8888
+      - TEAMS_MCP_OAUTH=${TEAMS_MCP_OAUTH:-true}
+    restart: unless-stopped
