@@ -7,26 +7,46 @@ import {
 } from "../types.js";
 
 export function registerTeamsTools(server: McpServer, graphService: GraphService, userToken?: string): void {
-  server.tool("list_teams", "List all teams the user is a member of", {}, async () => {
-    try {
-      const client = await graphService.getClient(userToken);
-      const result = await client.api("/me/joinedTeams").get();
-      return {
-        content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
-      };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      return {
-        content: [{ type: "text" as const, text: `Failed to list teams: ${message}` }],
-        isError: true,
-      };
+  server.registerTool(
+    "list_teams",
+    {
+      description: "List all teams the user is a member of. Read-only, no data is modified.",
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: true,
+      },
+    },
+    async () => {
+      try {
+        const client = await graphService.getClient(userToken);
+        const result = await client.api("/me/joinedTeams").get();
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
+        };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        return {
+          content: [{ type: "text" as const, text: `Failed to list teams: ${message}` }],
+          isError: true,
+        };
+      }
     }
-  });
+  );
 
-  server.tool(
+  server.registerTool(
     "list_channels",
-    "List channels in a specific team",
-    ListChannelsSchema.shape,
+    {
+      description: "List channels in a specific team. Read-only, no data is modified.",
+      inputSchema: ListChannelsSchema.shape,
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: true,
+      },
+    },
     async ({ teamId }) => {
       try {
         const client = await graphService.getClient(userToken);
@@ -46,10 +66,20 @@ export function registerTeamsTools(server: McpServer, graphService: GraphService
     }
   );
 
-  server.tool(
+  server.registerTool(
     "get_channel_messages",
-    "Get messages from a team channel",
-    GetChannelMessagesSchema.shape,
+    {
+      description:
+        "Read messages from a Teams channel. Read-only. " +
+        "⚠️ This accesses potentially private conversation data — only call when the user explicitly requests to view channel messages.",
+      inputSchema: GetChannelMessagesSchema.shape,
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: true,
+      },
+    },
     async ({ teamId, channelId, limit }) => {
       try {
         const client = await graphService.getClient(userToken);
@@ -72,10 +102,21 @@ export function registerTeamsTools(server: McpServer, graphService: GraphService
     }
   );
 
-  server.tool(
+  server.registerTool(
     "send_channel_message",
-    "Send a message to a team channel",
-    SendChannelMessageSchema.shape,
+    {
+      description:
+        "⚠️ WRITE ACTION: Send a message to a Teams channel on behalf of the user. " +
+        "This action is irreversible — the message will be visible to all channel members. " +
+        "Always confirm the exact message content and target channel with the user before calling this tool.",
+      inputSchema: SendChannelMessageSchema.shape,
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: false,
+        openWorldHint: true,
+      },
+    },
     async ({ teamId, channelId, message }) => {
       try {
         const client = await graphService.getClient(userToken);

@@ -7,10 +7,20 @@ export function registerMessagesTools(
   graphService: GraphService,
   userToken?: string
 ): void {
-  server.tool(
+  server.registerTool(
     "search_messages",
-    "Search across all Teams messages using Microsoft Search API",
-    SearchMessagesSchema.shape,
+    {
+      description:
+        "Search across all Teams messages (channels and chats) using Microsoft Search API. Read-only. " +
+        "⚠️ May return content from private chats and channels — only call when the user explicitly requests a search.",
+      inputSchema: SearchMessagesSchema.shape,
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: true,
+      },
+    },
     async ({ query, limit }) => {
       try {
         const client = await graphService.getClient(userToken);

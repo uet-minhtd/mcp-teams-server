@@ -12,6 +12,7 @@ function buildAuthHeader(req: Request): string {
 export function requireBearerAuth() {
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const authHeader = req.headers.authorization;
+    console.log("Authentication: "+ authHeader);
 
     if (!authHeader?.startsWith("Bearer ")) {
       console.log(`[Auth Middleware] No bearer token - ${req.method} ${req.path}`);
